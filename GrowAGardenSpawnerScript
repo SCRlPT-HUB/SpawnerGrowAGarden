@@ -1,0 +1,137 @@
+local player = game.Players.LocalPlayer
+local validPets = {
+    ["Dragonfly"] = true,
+    ["Raccoon"] = true,
+    ["Red Fox"] = true,
+}
+
+-- GUI Setup
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "PetSpawnerGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Draggable Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 320, 0, 200)
+frame.Position = UDim2.new(0.5, -160, 0.5, -100)
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+
+-- RGB Outline
+local stroke = Instance.new("UIStroke", frame)
+stroke.Thickness = 2
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+-- Title
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Grow A Garden Spawner"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 20
+titleLabel.Parent = frame
+
+-- Input Box
+local petInput = Instance.new("TextBox")
+petInput.Size = UDim2.new(0.8, 0, 0, 40)
+petInput.Position = UDim2.new(0.1, 0, 0.25, 0)
+petInput.PlaceholderText = "Enter Pet Name"
+petInput.Text = ""
+petInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+petInput.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+petInput.Font = Enum.Font.Gotham
+petInput.TextSize = 18
+petInput.ClearTextOnFocus = false
+petInput.Parent = frame
+
+-- Spawn Button
+local spawnButton = Instance.new("TextButton")
+spawnButton.Size = UDim2.new(0.8, 0, 0, 40)
+spawnButton.Position = UDim2.new(0.1, 0, 0.55, 0)
+spawnButton.Text = "Spawn Pet"
+spawnButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+spawnButton.BackgroundColor3 = Color3.fromRGB(20, 120, 180)
+spawnButton.Font = Enum.Font.GothamBold
+spawnButton.TextSize = 18
+spawnButton.Parent = frame
+
+-- Inline Notification
+local inlineNotification = Instance.new("TextLabel")
+inlineNotification.Size = UDim2.new(0.8, 0, 0, 30)
+inlineNotification.Position = UDim2.new(0.1, 0, 0.8, 0)
+inlineNotification.BackgroundTransparency = 1
+inlineNotification.TextColor3 = Color3.fromRGB(0, 255, 255)
+inlineNotification.Font = Enum.Font.Gotham
+inlineNotification.TextSize = 16
+inlineNotification.Text = ""
+inlineNotification.Visible = false
+inlineNotification.Parent = frame
+
+-- RGB Color Cycle
+task.spawn(function()
+	local hue = 0
+	while true do
+		hue = (hue + 1) % 360
+		stroke.Color = Color3.fromHSV(hue / 360, 1, 1)
+		task.wait(0.03)
+	end
+end)
+
+-- Function: Top-right or Centered Error Popup Notification
+local function showPopup(text, isError)
+	local popup = Instance.new("TextLabel")
+	popup.AnchorPoint = Vector2.new(0.5, 0)
+	popup.Position = isError and UDim2.new(0.5, 0, 0, 20) or UDim2.new(1, -280, 0, 20)
+	popup.BackgroundColor3 = isError and Color3.fromRGB(80, 0, 0) or Color3.fromRGB(30, 30, 30)
+	popup.TextColor3 = isError and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(0, 255, 255)
+	popup.Font = Enum.Font.GothamBold
+	popup.TextSize = 16
+	popup.Text = text
+	popup.TextStrokeTransparency = 0.8
+	popup.AutomaticSize = Enum.AutomaticSize.X
+	popup.Size = UDim2.new(0, 0, 0, 40)
+	popup.Parent = screenGui
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0, 12)
+	padding.PaddingRight = UDim.new(0, 12)
+	padding.Parent = popup
+
+	game.TweenService:Create(popup, TweenInfo.new(0.3), {
+		Position = popup.Position + UDim2.new(0, 0, 0, 10)
+	}):Play()
+
+	task.delay(2, function()
+		if popup then
+			game.TweenService:Create(popup, TweenInfo.new(0.5), {
+				TextTransparency = 1,
+				BackgroundTransparency = 1
+			}):Play()
+			task.wait(0.5)
+			popup:Destroy()
+		end
+	end)
+end
+
+-- Button Click Logic
+spawnButton.MouseButton1Click:Connect(function()
+	local petName = petInput.Text
+	if petName and petName ~= "" then
+		if validPets[petName] then
+			inlineNotification.Text = petName .. " Spawned"
+			inlineNotification.Visible = true
+			task.delay(2, function()
+				inlineNotification.Visible = false
+			end)
+			showPopup(petName .. " Spawned", false)
+		else
+			showPopup("Error: Not Found, Only Works On Dragonfly, Raccoon, Red Fox", true)
+		end
+	end
+end)
